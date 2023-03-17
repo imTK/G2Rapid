@@ -1,26 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Text File Reader</title>
+	<title>G to RAPID</title>
+	<style>
+		.column {
+			display: inline-block;
+			vertical-align: top;
+			width: 48%;
+		}
+		.title {
+			font-weight: bold;
+			margin-bottom: 10px;
+		}
+	</style>
 </head>
 <body>
-	<h1>Text File Reader</h1>
+	<h1>G to RAPID</h1>
 	<form>
-		<input type="file" id="fileInput">
-		<button type="button" onclick="readFile()">Read File</button>
+		<input type="file" id="fileInput" multiple>
+		<button type="button" onclick="readFiles()">Lue tiedostot</button>
+		<button type="button" onclick="clearFiles()">Tyhjennä</button>
+		<button type="button" onclick="translateAndDisplayRAPID()">Käännä RAPID Koodiksi</button>
+		<button type="button" onclick="downloadMod()">Lataa RAPID koodi</button>
 	</form>
 	<hr>
-	<pre id="fileContent"></pre>
+	<div class="column">
+		<div class="title">G-Koodi</div>
+		<div id="fileContents"></div>
+	</div>
+	<div class="column">
+		<div class="title">RAPID koodi</div>
+		<div id="rapidContents"></div>
+	</div>
+	
+	<script src="script.js"></script>
 
-	<script>
-		function readFile() {
-			var file = document.getElementById("fileInput").files[0];
-			var reader = new FileReader();
-			reader.onload = function(e) {
-				document.getElementById("fileContent").textContent = e.target.result;
-			}
-			reader.readAsText(file);
-		}
-	</script>
+	
 </body>
 </html>
