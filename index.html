@@ -2,6 +2,7 @@
 <html>
 <head>
 	<title>G to RAPID</title>
+	<link rel="stylesheet" href="style.css">
 	<style>
 		.column {
 			display: inline-block;
@@ -12,10 +13,25 @@
 			font-weight: bold;
 			margin-bottom: 10px;
 		}
+		.instructions {
+			font-size: 18px;
+			margin-bottom: 20px;
+			padding: 10px;
+			background-color: #f2f2f2;
+			border-radius: 5px;
+		}
 	</style>
 </head>
 <body>
 	<h1>G to RAPID</h1>
+	<div class="instructions">
+		KÄYTTÖOHJE<br>
+		1. Lataa .txt tiedosto(t)<br>
+		2. Lue Tiedostot<br>
+		3. Käännä RAPID koodiksi<br>
+		4. Lataa RAPID koodi<br>
+		5. Tarvittaessa voit resetoida sivun "Tyhjennä" painikkeella tai paina F5
+	</div>
 	<form>
 		<input type="file" id="fileInput" multiple>
 		<button type="button" onclick="readFiles()">Lue tiedostot</button>

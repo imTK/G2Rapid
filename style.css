@@ -1,0 +1,62 @@
+button, input[type="file"]::before {
+  background-color: #4da6ff;
+  color: #fff;
+  padding: 3px 40px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+button:hover, input[type="file"]::before:hover {
+  background-color: #0077b3;
+}
+
+button:active, input[type="file"]::before:active {
+  background-color: #005c99;
+}
+
+button:focus, input[type="file"]::before:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(77,166,255,0.4);
+}
+
+input[type="file"] {
+  position: relative;
+  overflow: hidden;
+}
+
+input[type="file"]::-webkit-file-upload-button {
+  visibility: hidden;
+}
+
+input[type="file"]::before {
+  content: 'Lataa G-Koodi muunnettavaksi';
+  display: inline-block;
+  background-color: #4da6ff;
+  color: #fff;
+  padding: 5px 40px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  line-height: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 1;
+}
+
+input[type="file"]:hover::before {
+  background-color: #0077b3;
+}
+
+input[type="file"]:active::before {
+  background-color: #005c99;
+}
+
+input[type="file"]:focus::before {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(77,166,255,0.4);
+}
