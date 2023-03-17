@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Text File Reader</title>
+</head>
+<body>
+	<h1>Text File Reader</h1>
+	<form>
+		<input type="file" id="fileInput">
+		<button type="button" onclick="readFile()">Read File</button>
+	</form>
+	<hr>
+	<pre id="fileContent"></pre>
+
+	<script>
+		function readFile() {
+			var file = document.getElementById("fileInput").files[0];
+			var reader = new FileReader();
+			reader.onload = function(e) {
+				document.getElementById("fileContent").textContent = e.target.result;
+			}
+			reader.readAsText(file);
+		}
+	</script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+So this is basically just some shitty convertor for G code to ABB rapid for robotstudio
