@@ -1,3 +1,4 @@
+// This function takes a single line of G-Code, trims it, and returns the command and value if it's valid (ignoring comments).
 function parseGCodeLine(line) {
   line = line.trim();
   if (!line || line.startsWith(';')) {
@@ -10,7 +11,9 @@ function parseGCodeLine(line) {
   return [command, value];
 }
 
-function convertGCodeToRAPID(gcode, moduleName, fileName) {
+
+// This function converts G-Code text into ABB RAPID code, with the provided module and file name.
+function convertGCodeToRAPID(gcode, procName, moduleName) {
   const rapid = [];
 
   if (!moduleName) {
@@ -25,11 +28,11 @@ function convertGCodeToRAPID(gcode, moduleName, fileName) {
   let x, y, z, q1, q2, q3;
 
   // Check if the MODULE statement has already been added
-  if (modContent.indexOf(`MODULE ${fileName}`) === -1) {
-    rapid.push(`MODULE ${fileName}\n\n`);
+  if (modContent.indexOf(`MODULE ${moduleName}`) === -1) {
+    rapid.push(`MODULE ${moduleName}\n\n`);
   }
 
-  rapid.push(`PROC Path_${moduleName}()\n`);
+  rapid.push(`PROC Path_${procName}()\n`);
 
   for (let line of gcode.split('\n')) {
     const [command, value] = parseGCodeLine(line) || [];
@@ -92,81 +95,67 @@ return rapid.join("");
 }
 
 
-function translateGToRAPID(gCode) {
-  // Get the module name from the G code
-  let moduleName = '';
-  const lines = gCode.split('\n');
-  for (let line of lines) {
-    const [command, value] = parseGCodeLine(line) || [];
-    if (command === 'PARTNO') {
-      moduleName = value;
-      break;
-    }
-  }
-
-  // Convert the G code to RAPID and return the result
-  return convertGCodeToRAPID(gCode, moduleName);
-}
-
-let modContent = ""; // Declare modContent at the beginning of the script
-
-function translateAndDisplayRAPID() {
-  const gCode = document.getElementById("fileContents").textContent;
-  if (gCode) {
-    const rapidCode = translateGToRAPID(gCode);
-    const rapidCodePre = document.createElement("pre");
-    rapidCodePre.textContent = rapidCode;
-    document.getElementById("rapidContents").innerHTML = "";
-    document.getElementById("rapidContents").appendChild(rapidCodePre);
-
-    modContent = rapidCode; // Set modContent to the generated RAPID code
-  }
-}
+// Declare modContent to hold the module content for the entire program.
+let modContent = ""; 
 
 
-function readFiles() {
+// This function reads the selected files, converts the G-Code into RAPID code, and appends the result to the modContent variable.
+async function readFiles() {
   // Show a prompt for the user to enter the module name
-  const fileName = prompt("Anna moduulin nimi:");
+  const moduleName = prompt("Anna moduulin nimi:");
 
   // If the user presses cancel or doesn't provide a module name, return
-  if (!fileName) {
+  if (!moduleName) {
     alert("Moduulin nimi on pakollinen.");
     return;
   }
 
-  var files = document.getElementById("fileInput").files;
-  for (var i = 0; i < files.length; i++) {
-    var file = files[i];
-    var reader = new FileReader();
-    reader.onload = (function(fileIndex, totalFiles) {
-      return function(e) {
-        var fileContent = document.createElement("pre");
-        fileContent.textContent = e.target.result;
-        document.getElementById("fileContents").appendChild(fileContent);
-        const rapidCode = convertGCodeToRAPID(e.target.result, file.name.replace(/\.[^/.]+$/, ""), fileName);
-        const rapidCodePre = document.createElement("pre");
-        rapidCodePre.textContent = rapidCode;
-        document.getElementById("rapidContents").appendChild(rapidCodePre);
-        modContent += rapidCode;
+  const files = document.getElementById("fileInput").files;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const fileContent = await readFileAsText(file);
+    const procName = file.name.replace(/\.[^/.]+$/, "");
+    const rapidCode = convertGCodeToRAPID(fileContent, procName, moduleName);
 
-        // Check if this is the last file and append "ENDMODULE" if it is
-        if (fileIndex === totalFiles - 1) {
-          modContent += "ENDMODULE\n";
+    // Update the DOM with the read file
+    const fileContentPre = document.createElement("pre");
+    fileContentPre.textContent = fileContent;
+    document.getElementById("fileContents").appendChild(fileContentPre);
 
-          // Append "ENDMODULE" to the preview (the "pre" element) as well
-          const endModulePre = document.createElement("pre");
-          endModulePre.textContent = "ENDMODULE";
-          document.getElementById("rapidContents").appendChild(endModulePre);
-        }
-      };
-    })(i, files.length);
-    reader.readAsText(file);
+    // Update the DOM with the converted RAPID code
+    const rapidCodePre = document.createElement("pre");
+    rapidCodePre.textContent = rapidCode;
+    document.getElementById("rapidContents").appendChild(rapidCodePre);
+
+    modContent += rapidCode;
+
+    // Check if this is the last file and append "ENDMODULE" if it is
+    if (i === files.length - 1) {
+      modContent += "ENDMODULE\n";
+
+      // Append "ENDMODULE" to the preview (the "pre" element) as well
+      const endModulePre = document.createElement("pre");
+      endModulePre.textContent = "ENDMODULE";
+      document.getElementById("rapidContents").appendChild(endModulePre);
+    }
   }
 }
 
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      resolve(e.target.result);
+    };
+    reader.onerror = (e) => {
+      reject(e);
+    };
+    reader.readAsText(file);
+  });
+}
 
 
-
+// This function clears the file input, resets modContent and rapidContent, and clears the file contents and rapid contents elements.
 function clearFiles() {
 	document.getElementById("fileInput").value = null;
 	document.getElementById("fileContents").innerHTML = "";
@@ -175,6 +164,8 @@ function clearFiles() {
 	rapidContent = ""; // reset rapidContent
 }
 
+
+// This function triggers the download of the generated RAPID code as a .mod file.
 function downloadMod() {
 	if (modContent) {
 		// Get the module name from the modContent
