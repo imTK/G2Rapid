@@ -110,37 +110,53 @@ async function readFiles() {
     return;
   }
 
-  const files = document.getElementById("fileInput").files;
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
+  const files = Array.from(document.getElementById("fileInput").files);
+
+  // Sort files by name
+  const sortedFiles = files.sort((a, b) => a.name.localeCompare(b.name));
+
+  // Read a file and return its content as text
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+  }
+
+  // Use a for loop with await to process files one by one in sorted order
+  let procCounter = 1;
+  for (const file of sortedFiles) {
     const fileContent = await readFileAsText(file);
-    const procName = file.name.replace(/\.[^/.]+$/, "");
+
+    const fileContentElement = document.createElement("pre");
+    fileContentElement.textContent = fileContent;
+    document.getElementById("fileContents").appendChild(fileContentElement);
+
+    // Get the file name without extension for the PROC name and append a unique identifier
+    const procName = file.name.replace(/\.[^/.]+$/, "") + `_${procCounter}`;
+
+    // Pass the procName as the second argument instead of fileName
     const rapidCode = convertGCodeToRAPID(fileContent, procName, moduleName);
 
-    // Update the DOM with the read file
-    const fileContentPre = document.createElement("pre");
-    fileContentPre.textContent = fileContent;
-    document.getElementById("fileContents").appendChild(fileContentPre);
-
-    // Update the DOM with the converted RAPID code
     const rapidCodePre = document.createElement("pre");
     rapidCodePre.textContent = rapidCode;
     document.getElementById("rapidContents").appendChild(rapidCodePre);
-
     modContent += rapidCode;
 
-    // Check if this is the last file and append "ENDMODULE" if it is
-    if (i === files.length - 1) {
-      modContent += "ENDMODULE\n";
-
-      // Append "ENDMODULE" to the preview (the "pre" element) as well
-      const endModulePre = document.createElement("pre");
-      endModulePre.textContent = "ENDMODULE";
-      document.getElementById("rapidContents").appendChild(endModulePre);
-    }
+    procCounter++;
   }
+
+  // Append "ENDMODULE" to the modContent and the preview (the "pre" element) as well
+  modContent += "ENDMODULE\n";
+  const endModulePre = document.createElement("pre");
+  endModulePre.textContent = "ENDMODULE";
+  document.getElementById("rapidContents").appendChild(endModulePre);
 }
 
+
+//used in readFiles function
 function readFileAsText(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -181,5 +197,42 @@ function downloadMod() {
 		link.click();
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
+		createMainModule();
 	}
+}
+
+
+//This functions creates a Main.MOD file if user has selected to create one
+function createMainModule() {
+  const checkbox = document.getElementById("mainModuleCheckbox");
+  if (!checkbox.checked) {
+    return;
+  }
+
+  const mainModuleContent = `%%%\
+\n  Muuntaja-ohjelmiston luoja #Toni Kaivola#\
+\n  Käyttö omalla vastuulla\
+\n%%%\
+\n\
+\nMODULE Main\
+\n\
+\n  !Maincode\
+\n\
+\n  PROC Main()\
+\n  \
+\n    !Hello\
+\n  \
+\n  ENDPROC\
+\n\
+\nENDMODULE`;
+
+  const blob = new Blob([mainModuleContent], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.download = "main.MOD";
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }

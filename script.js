@@ -197,5 +197,42 @@ function downloadMod() {
 		link.click();
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
+		createMainModule();
 	}
+}
+
+
+//This functions creates a Main.MOD file if user has selected to create one
+function createMainModule() {
+  const checkbox = document.getElementById("mainModuleCheckbox");
+  if (!checkbox.checked) {
+    return;
+  }
+
+  const mainModuleContent = `%%%\
+\n  Muuntaja-ohjelmiston luoja #Toni Kaivola#\
+\n  Käyttö omalla vastuulla\
+\n%%%\
+\n\
+\nMODULE Main\
+\n\
+\n  !Maincode\
+\n\
+\n  PROC Main()\
+\n  \
+\n    !Hello\
+\n  \
+\n  ENDPROC\
+\n\
+\nENDMODULE`;
+
+  const blob = new Blob([mainModuleContent], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.download = "main.MOD";
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
