@@ -110,12 +110,23 @@ async function readFiles() {
     return;
   }
 
-  var files = document.getElementById("fileInput").files;
+  const files = Array.from(document.getElementById("fileInput").files);
 
-  // Convert the FileList object to an array and sort it alphabetically
-  const sortedFiles = Array.from(files).sort((a, b) => a.name.localeCompare(b.name));
+  // Sort files by name
+  const sortedFiles = files.sort((a, b) => a.name.localeCompare(b.name));
+
+  // Read a file and return its content as text
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+  }
 
   // Use a for loop with await to process files one by one in sorted order
+  let procCounter = 1;
   for (const file of sortedFiles) {
     const fileContent = await readFileAsText(file);
 
@@ -123,8 +134,8 @@ async function readFiles() {
     fileContentElement.textContent = fileContent;
     document.getElementById("fileContents").appendChild(fileContentElement);
 
-    // Get the file name without extension for the PROC name
-    const procName = file.name.replace(/\.[^/.]+$/, "");
+    // Get the file name without extension for the PROC name and append a unique identifier
+    const procName = file.name.replace(/\.[^/.]+$/, "") + `_${procCounter}`;
 
     // Pass the procName as the second argument instead of fileName
     const rapidCode = convertGCodeToRAPID(fileContent, procName, moduleName);
@@ -133,17 +144,16 @@ async function readFiles() {
     rapidCodePre.textContent = rapidCode;
     document.getElementById("rapidContents").appendChild(rapidCodePre);
     modContent += rapidCode;
+
+    procCounter++;
   }
 
-  // Append "ENDMODULE" after processing all files
+  // Append "ENDMODULE" to the modContent and the preview (the "pre" element) as well
   modContent += "ENDMODULE\n";
-
-  // Append "ENDMODULE" to the preview (the "pre" element) as well
   const endModulePre = document.createElement("pre");
   endModulePre.textContent = "ENDMODULE";
   document.getElementById("rapidContents").appendChild(endModulePre);
 }
-  
 
 
 //used in readFiles function
