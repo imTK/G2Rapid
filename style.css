@@ -56,7 +56,7 @@ input[type="file"]::-webkit-file-upload-button {
 }
 
 input[type="file"]::before {
-  content: 'Lataa G-Koodi muunnettavaksi';
+  content: 'Lataa .txt tiedosto(t)';
   display: inline-block;
   background-color: #4da6ff;
   color: #fff;

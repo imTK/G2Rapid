@@ -10,12 +10,10 @@ function parseGCodeLine(line) {
   return [command, value];
 }
 
-function convertGCodeToRAPID(gcode, moduleName, fileName) {
+function convertGCodeToRAPID(gcode, moduleName) {
   const rapid = [];
-
-  if (!moduleName) {
-    moduleName = "Program";
-  }
+  rapid.push(`MODULE ${moduleName}\n\n`);
+  rapid.push('PROC Path_01()\n');
 
   let useJointMove = false;
   let insideFcpressl = false;
@@ -23,13 +21,6 @@ function convertGCodeToRAPID(gcode, moduleName, fileName) {
 
   // Declare the x, y, z, q1, q2, and q3 variables here
   let x, y, z, q1, q2, q3;
-
-  // Check if the MODULE statement has already been added
-  if (modContent.indexOf(`MODULE ${fileName}`) === -1) {
-    rapid.push(`MODULE ${fileName}\n\n`);
-  }
-
-  rapid.push(`PROC Path_${moduleName}()\n`);
 
   for (let line of gcode.split('\n')) {
     const [command, value] = parseGCodeLine(line) || [];
@@ -78,17 +69,16 @@ function convertGCodeToRAPID(gcode, moduleName, fileName) {
     insideFcpressl = false;
     fcpresslCommands.length = 0;
   }
-  
+
   // Write out any remaining FCPressL commands in the list
   for (let fcpresslCommand of fcpresslCommands) {
-    rapid.push('${fcpresslCommand}\n');
+    rapid.push(`  ${fcpresslCommand}\n`);
   }
 
   // Write out the end of the RAPID module and return the code
   rapid.push('ENDPROC\n\n');
-
-
-return rapid.join("");
+  rapid.push('ENDMODULE\n\n');
+  return rapid.join("");
 }
 
 
@@ -124,47 +114,25 @@ function translateAndDisplayRAPID() {
 }
 
 
+
 function readFiles() {
-  // Show a prompt for the user to enter the module name
-  const fileName = prompt("Anna moduulin nimi:");
-
-  // If the user presses cancel or doesn't provide a module name, return
-  if (!fileName) {
-    alert("Moduulin nimi on pakollinen.");
-    return;
-  }
-
   var files = document.getElementById("fileInput").files;
   for (var i = 0; i < files.length; i++) {
     var file = files[i];
     var reader = new FileReader();
-    reader.onload = (function(fileIndex, totalFiles) {
-      return function(e) {
-        var fileContent = document.createElement("pre");
-        fileContent.textContent = e.target.result;
-        document.getElementById("fileContents").appendChild(fileContent);
-        const rapidCode = convertGCodeToRAPID(e.target.result, file.name.replace(/\.[^/.]+$/, ""), fileName);
-        const rapidCodePre = document.createElement("pre");
-        rapidCodePre.textContent = rapidCode;
-        document.getElementById("rapidContents").appendChild(rapidCodePre);
-        modContent += rapidCode;
-
-        // Check if this is the last file and append "ENDMODULE" if it is
-        if (fileIndex === totalFiles - 1) {
-          modContent += "ENDMODULE\n";
-
-          // Append "ENDMODULE" to the preview (the "pre" element) as well
-          const endModulePre = document.createElement("pre");
-          endModulePre.textContent = "ENDMODULE";
-          document.getElementById("rapidContents").appendChild(endModulePre);
-        }
-      };
-    })(i, files.length);
+    reader.onload = function(e) {
+      var fileContent = document.createElement("pre");
+      fileContent.textContent = e.target.result;
+      document.getElementById("fileContents").appendChild(fileContent);
+      const rapidCode = convertGCodeToRAPID(e.target.result, file.name.replace(/\.[^/.]+$/, ""));
+      const rapidCodePre = document.createElement("pre");
+      rapidCodePre.textContent = rapidCode;
+      document.getElementById("rapidContents").appendChild(rapidCodePre);
+      modContent += rapidCode;
+    }
     reader.readAsText(file);
   }
 }
-
-
 
 
 function clearFiles() {
@@ -177,15 +145,11 @@ function clearFiles() {
 
 function downloadMod() {
 	if (modContent) {
-		// Get the module name from the modContent
-        const moduleNameMatch = modContent.match(/MODULE\s+([^\s]+)/);
-		const moduleName = moduleNameMatch ? moduleNameMatch[1] : "output";
-		
 		var blob = new Blob([modContent], { type: "text/plain" });
 		var url = URL.createObjectURL(blob);
 		var link = document.createElement("a");
 		link.href = url;
-		link.download = `${moduleName}.mod`;
+		link.download = "output.mod";
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
