@@ -197,7 +197,10 @@ function downloadMod() {
 		link.click();
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
-		createMainModule();
+		const checkbox = document.getElementById("mainModuleCheckbox");
+		if (checkbox.checked) {
+		  createMainModule();
+		}
 	}
 }
 
@@ -235,4 +238,40 @@ function createMainModule() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+
+//shows main module on right column
+function toggleMainModule() {
+  const checkbox = document.getElementById("mainModuleCheckbox");
+  const rapidContents = document.getElementById("rapidContents");
+  
+  if (checkbox.checked) {
+    const mainModuleContent = `%%%\
+\n  Muuntaja-ohjelmiston luoja #Toni Kaivola#\
+\n  Käyttö omalla vastuulla\
+\n%%%\
+\n\
+\nMODULE Main\
+\n\
+\n  !Maincode\
+\n\
+\n  PROC Main()\
+\n  \
+\n    !Hello\
+\n  \
+\n  ENDPROC\
+\n\
+\nENDMODULE`;
+
+    const mainModulePre = document.createElement("pre");
+    mainModulePre.id = "mainModulePre";
+    mainModulePre.textContent = mainModuleContent;
+    rapidContents.insertBefore(mainModulePre, rapidContents.firstChild);
+  } else {
+    const mainModulePre = document.getElementById("mainModulePre");
+    if (mainModulePre) {
+      rapidContents.removeChild(mainModulePre);
+    }
+  }
 }
