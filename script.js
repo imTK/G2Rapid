@@ -98,6 +98,8 @@ return rapid.join("");
 // Declare modContent to hold the module content for the entire program.
 let modContent = ""; 
 
+let procNames = [];
+
 
 // This function reads the selected files, converts the G-Code into RAPID code, and appends the result to the modContent variable.
 async function readFiles() {
@@ -115,15 +117,8 @@ async function readFiles() {
   // Sort files by name
   const sortedFiles = files.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Read a file and return its content as text
-  function readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsText(file);
-    });
-  }
+  // Store the names of generated PROCs
+  procNames = [];
 
   // Use a for loop with await to process files one by one in sorted order
   let procCounter = 1;
@@ -136,6 +131,7 @@ async function readFiles() {
 
     // Get the file name without extension for the PROC name and append a unique identifier
     const procName = file.name.replace(/\.[^/.]+$/, "") + `_${procCounter}`;
+    procNames.push(procName); // Add the PROC name to the array
 
     // Pass the procName as the second argument instead of fileName
     const rapidCode = convertGCodeToRAPID(fileContent, procName, moduleName);
@@ -153,6 +149,12 @@ async function readFiles() {
   const endModulePre = document.createElement("pre");
   endModulePre.textContent = "ENDMODULE";
   document.getElementById("rapidContents").appendChild(endModulePre);
+
+  // Pass the procNames array to the createMainModule function
+  const checkbox = document.getElementById("mainModuleCheckbox");
+  if (checkbox.checked) {
+    createMainModule(procNames);
+  }
 }
 
 
@@ -183,36 +185,38 @@ function clearFiles() {
 
 // This function triggers the download of the generated RAPID code as a .mod file.
 function downloadMod() {
-	if (modContent) {
-		// Get the module name from the modContent
-        const moduleNameMatch = modContent.match(/MODULE\s+([^\s]+)/);
-		const moduleName = moduleNameMatch ? moduleNameMatch[1] : "output";
-		
-		var blob = new Blob([modContent], { type: "text/plain" });
-		var url = URL.createObjectURL(blob);
-		var link = document.createElement("a");
-		link.href = url;
-		link.download = `${moduleName}.mod`;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
-		const checkbox = document.getElementById("mainModuleCheckbox");
-		if (checkbox.checked) {
-		  createMainModule();
-		}
-	}
+  if (modContent) {
+    // Get the module name from the modContent
+    const moduleNameMatch = modContent.match(/MODULE\s+([^\s]+)/);
+    const moduleName = moduleNameMatch ? moduleNameMatch[1] : "output";
+
+    var blob = new Blob([modContent], { type: "text/plain" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = `${moduleName}.mod`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    const checkbox = document.getElementById("mainModuleCheckbox");
+    if (checkbox.checked) {
+      createMainModule(procNames);
+    }
+  }
 }
 
 
+
 //This functions creates a Main.MOD file if user has selected to create one
-function createMainModule() {
+function createMainModule(procNames) {
   const checkbox = document.getElementById("mainModuleCheckbox");
   if (!checkbox.checked) {
     return;
   }
 
-  const mainModuleContent = `%%%\
+  let mainModuleContent = `%%%\
 \n  Muuntaja-ohjelmiston luoja #Toni Kaivola#\
 \n  Käyttö omalla vastuulla\
 \n%%%\
@@ -221,13 +225,15 @@ function createMainModule() {
 \n\
 \n  !Maincode\
 \n\
-\n  PROC Main()\
-\n  \
-\n    !Hello\
-\n  \
-\n  ENDPROC\
-\n\
-\nENDMODULE`;
+\n  PROC Main()\n`;
+
+  // Loop through the procNames array and call each PROC inside the Main() PROC
+  for (const procName of procNames) {
+    mainModuleContent += `    ${procName}();\n`;
+  }
+
+  mainModuleContent += `  ENDPROC\n\n`;
+  mainModuleContent += "ENDMODULE";
 
   const blob = new Blob([mainModuleContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
@@ -240,14 +246,17 @@ function createMainModule() {
   URL.revokeObjectURL(url);
 }
 
+function toggleMainModuleWrapper() {
+  toggleMainModule(procNames);
+}
 
 //shows main module on right column
-function toggleMainModule() {
+function toggleMainModule(procNames) {
   const checkbox = document.getElementById("mainModuleCheckbox");
   const rapidContents = document.getElementById("rapidContents");
-  
+
   if (checkbox.checked) {
-    const mainModuleContent = `%%%\
+    let mainModuleContent = `%%%\
 \n  Muuntaja-ohjelmiston luoja #Toni Kaivola#\
 \n  Käyttö omalla vastuulla\
 \n%%%\
@@ -256,13 +265,15 @@ function toggleMainModule() {
 \n\
 \n  !Maincode\
 \n\
-\n  PROC Main()\
-\n  \
-\n    !Hello\
-\n  \
-\n  ENDPROC\
-\n\
-\nENDMODULE`;
+\n  PROC Main()\n`;
+
+    // Loop through the procNames array and call each PROC inside the Main() PROC
+    for (const procName of procNames) {
+      mainModuleContent += `    ${procName}();\n`;
+    }
+
+    mainModuleContent += `  ENDPROC\n\n`;
+    mainModuleContent += "ENDMODULE";
 
     const mainModulePre = document.createElement("pre");
     mainModulePre.id = "mainModulePre";
